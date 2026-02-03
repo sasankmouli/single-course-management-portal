@@ -146,3 +146,36 @@ def health():
         return "OK"
     except Exception as e:
         return str(e), 500
+
+
+# ===============================
+# ADD INSTRUCTOR LOGIN (SAFE)
+# ===============================
+
+from werkzeug.security import check_password_hash
+
+INSTRUCTOR_USERNAME = os.getenv("INSTRUCTOR_USERNAME")
+INSTRUCTOR_PASSWORD_HASH = os.getenv("INSTRUCTOR_PASSWORD_HASH")
+
+@app.route("/login", methods=["GET", "POST"])
+def instructor_login():
+    if request.method == "POST":
+        if not INSTRUCTOR_USERNAME or not INSTRUCTOR_PASSWORD_HASH:
+            return "Instructor credentials not configured", 500
+
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if username == INSTRUCTOR_USERNAME and check_password_hash(INSTRUCTOR_PASSWORD_HASH, password):
+            session["instructor"] = True
+            return redirect("/course")
+
+        return "Invalid credentials", 401
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def instructor_logout():
+    session.pop("instructor", None)
+    return redirect("/course")
