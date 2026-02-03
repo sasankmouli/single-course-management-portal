@@ -7,6 +7,12 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+UPLOAD_FOLDER = os.path.join(app.root_path, "uploads")
+LECTURE_FOLDER = os.path.join(UPLOAD_FOLDER, "lectures")
+
+os.makedirs(LECTURE_FOLDER, exist_ok=True)
+
+
 # ---------------- BASIC CONFIG ----------------
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -229,7 +235,7 @@ from flask import send_from_directory
 
 @app.route("/download/lecture/<filename>")
 def download_lecture(filename):
-    return send_from_directory(LECTURE_FOLDER, filename)
+    return send_from_directory(LECTURE_FOLDER, filename, as_attachment=True)
 
 
 
