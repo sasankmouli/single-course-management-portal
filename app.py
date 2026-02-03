@@ -23,10 +23,10 @@ FROM_EMAIL = os.getenv("FROM_EMAIL", "onboarding@resend.dev")
 
 # Fixed course metadata
 COURSE_ID = 1
-COURSE_TITLE = "CS202 – Automata theory and logic - Spring 2026"
-COURSE_INSTRUCTOR = "Sasank Mouli"
-COURSE_DESCRIPTION = "Textbook: Theory of Computation by Michael Sipser"
-COURSE_SUBMISSION_URL = "https://docs.google.com/forms/d/1RmmB-k_0BSgqB-yDQmKAQ4MThkwEJeEVdc7V9tvAnWI/edit?usp=drivesdk"
+COURSE_TITLE = "CS101 – Introduction to Programming"
+COURSE_INSTRUCTOR = "Instructor"
+COURSE_DESCRIPTION = "Core programming concepts using Python."
+COURSE_SUBMISSION_URL = "https://forms.google.com/your-form"
 
 UPLOAD_FOLDER = "uploads"
 LECTURE_FOLDER = os.path.join(UPLOAD_FOLDER, "lectures")
@@ -39,7 +39,7 @@ os.makedirs(ASSIGNMENT_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
-app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 2MB
+app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024  # 2MB
 
 # ---------------- DB ----------------
 
@@ -70,7 +70,8 @@ def init_db():
     CREATE TABLE IF NOT EXISTS students (
         id SERIAL PRIMARY KEY,
         name TEXT,
-        email TEXT UNIQUE
+        email TEXT UNIQUE,
+        password TEXT
     );
     """)
 
@@ -104,31 +105,28 @@ def init_db():
 
     # Ensure fixed course exists
     cur.execute("SELECT id FROM courses WHERE id=%s", (COURSE_ID,))
-    cur.execute(
-        """
-        INSERT INTO courses (id, title, instructor, description, submission_url)
-        VALUES (%s,%s,%s,%s,%s)
-        ON CONFLICT (id) DO UPDATE SET
-            title = EXCLUDED.title,
-            instructor = EXCLUDED.instructor,
-            description = EXCLUDED.description,
-            submission_url = EXCLUDED.submission_url
-        """,
-        (
-            COURSE_ID,
-            COURSE_TITLE,
-            COURSE_INSTRUCTOR,
-            COURSE_DESCRIPTION,
-            COURSE_SUBMISSION_URL,
+    if not cur.fetchone():
+        cur.execute(
+            """
+            INSERT INTO courses (id, title, instructor, description, submission_url)
+            VALUES (%s,%s,%s,%s,%s)
+            """,
+            (
+                COURSE_ID,
+                COURSE_TITLE,
+                COURSE_INSTRUCTOR,
+                COURSE_DESCRIPTION,
+                COURSE_SUBMISSION_URL,
+            ),
         )
-    )
 
     conn.commit()
     cur.close()
     conn.close()
 
 
-
+with app.app_context():
+    init_db()
 
 # ---------------- EMAIL ----------------
 
@@ -204,6 +202,34 @@ def course_page():
     )
 
 
+@app.route("/enroll", methods=["POST"])
+def enroll():
+    if not session.get("student_id"):
+        return redirect("/student/login")
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT name, email FROM students WHERE id=%s", (session["student_id"],))
+    student = cur.fetchone()
+
+    cur.execute("SELECT 1 FROM enrollments WHERE email=%s", (student["email"],))
+    if not cur.fetchone():
+        cur.execute(
+            "INSERT INTO enrollments (student_name, email, course_id) VALUES (%s,%s,%s)",
+            (student["name"], student["email"], COURSE_ID),
+        )
+        conn.commit()
+
+        send_email(
+            student["email"],
+            "Enrollment Confirmed",
+            f"You are enrolled in {COURSE_TITLE}.",
+        )
+
+    cur.close()
+    conn.close()
+    return redirect("/course")
 
 # ---------------- INSTRUCTOR UPLOADS ----------------
 
@@ -225,17 +251,6 @@ def add_lecture():
             "INSERT INTO lectures (title, filename, course_id) VALUES (%s,%s,%s)",
             (title, filename, COURSE_ID),
         )
-
-        cur.execute("SELECT email FROM students")
-        emails = [r["email"] for r in cur.fetchall()]
-
-        for email in emails:
-            send_email(
-                email,
-                "New lecture uploaded",
-                f"A new lecture was added to {COURSE_TITLE}."
-            )
-
         conn.commit()
         cur.close()
         conn.close()
@@ -264,17 +279,6 @@ def add_assignment():
             "INSERT INTO assignments (title, filename, due_date, course_id) VALUES (%s,%s,%s,%s)",
             (title, filename, due_date, COURSE_ID),
         )
-
-        cur.execute("SELECT email FROM students")
-        emails = [r["email"] for r in cur.fetchall()]
-
-        for email in emails:
-            send_email(
-                email,
-                "New assignment posted",
-                f"A new assignment was added to {COURSE_TITLE}."
-            )
-
         conn.commit()
         cur.close()
         conn.close()
@@ -288,34 +292,62 @@ def add_assignment():
 @app.route("/student/register", methods=["GET", "POST"])
 def student_register():
     if request.method == "POST":
-        name = request.form["name"]
-        email = request.form["email"]
-
         conn = get_db()
         cur = conn.cursor()
-
-        cur.execute("SELECT 1 FROM students WHERE email=%s", (email,))
-        if not cur.fetchone():
+        try:
             cur.execute(
-                "INSERT INTO students (name, email) VALUES (%s,%s)",
-                (name, email)
+                "INSERT INTO students (name, email, password) VALUES (%s,%s,%s)",
+                (
+                    request.form["name"],
+                    request.form["email"],
+                    generate_password_hash(request.form["password"]),
+                ),
             )
             conn.commit()
+        except Exception:
+            conn.rollback()
+            cur.close()
+            conn.close()
+            return "Email already registered"
 
-            send_email(
-                email,
-                "You’re registered!",
-                f"You’ll now receive updates for {COURSE_TITLE}."
-            )
+        cur.execute("SELECT id, name FROM students WHERE email=%s", (request.form["email"],))
+        student = cur.fetchone()
+        session["student_id"] = student["id"]
+        session["student_name"] = student["name"]
 
         cur.close()
         conn.close()
-
         return redirect("/course")
 
     return render_template("student_register.html")
 
 
+@app.route("/student/login", methods=["GET", "POST"])
+def student_login():
+    if request.method == "POST":
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM students WHERE email=%s", (request.form["email"],))
+        student = cur.fetchone()
+
+        if student and check_password_hash(student["password"], request.form["password"]):
+            session["student_id"] = student["id"]
+            session["student_name"] = student["name"]
+            cur.close()
+            conn.close()
+            return redirect("/course")
+
+        cur.close()
+        conn.close()
+        return "Invalid login"
+
+    return render_template("student_login.html")
+
+
+@app.route("/student/logout")
+def student_logout():
+    session.clear()
+    return redirect("/")
 
 # ---------------- DOWNLOADS ----------------
 
@@ -327,39 +359,3 @@ def download_lecture(filename):
 @app.route("/download/assignment/<filename>")
 def download_assignment(filename):
     return send_from_directory(ASSIGNMENT_FOLDER, filename)
-
-@app.context_processor
-def inject_course():
-    return {
-        "course": {
-            "title": COURSE_TITLE,
-            "instructor": COURSE_INSTRUCTOR,
-        }
-    }
-
-@app.route("/enroll", methods=["POST"])
-def enroll():
-    email = request.form["email"]
-    name = request.form["name"]
-
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("SELECT 1 FROM enrollments WHERE email=%s", (email,))
-    if not cur.fetchone():
-        cur.execute(
-            "INSERT INTO enrollments (student_name, email, course_id) VALUES (%s,%s,%s)",
-            (name, email, COURSE_ID)
-        )
-        conn.commit()
-
-        send_email(
-            email,
-            "Enrollment confirmed",
-            f"You’re enrolled in {COURSE_TITLE}."
-        )
-
-    cur.close()
-    conn.close()
-    return redirect("/course")
-
