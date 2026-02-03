@@ -226,6 +226,17 @@ def add_lecture():
             "INSERT INTO lectures (title, filename, course_id) VALUES (%s,%s,%s)",
             (title, filename, COURSE_ID),
         )
+
+        cur.execute("SELECT email FROM students")
+        emails = [r["email"] for r in cur.fetchall()]
+
+        for email in emails:
+            send_email(
+                email,
+                "New lecture uploaded",
+                f"A new lecture was added to {COURSE_TITLE}."
+            )
+
         conn.commit()
         cur.close()
         conn.close()
@@ -254,6 +265,17 @@ def add_assignment():
             "INSERT INTO assignments (title, filename, due_date, course_id) VALUES (%s,%s,%s,%s)",
             (title, filename, due_date, COURSE_ID),
         )
+
+        cur.execute("SELECT email FROM students")
+        emails = [r["email"] for r in cur.fetchall()]
+
+        for email in emails:
+            send_email(
+                email,
+                "New assignment posted",
+                f"A new assignment was added to {COURSE_TITLE}."
+            )
+
         conn.commit()
         cur.close()
         conn.close()
