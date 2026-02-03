@@ -152,7 +152,8 @@ def init_db():
 def index():
     conn = get_db()
     cur = conn.cursor()
-    courses = cur.execute("SELECT * FROM courses").fetchall()
+    cur.execute("SELECT * FROM courses")
+    courses = cur.fetchall()
     conn.close()
     return render_template("index.html", courses=courses)
 
