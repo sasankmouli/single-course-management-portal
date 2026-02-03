@@ -114,13 +114,20 @@ def course_page():
     cur.execute("SELECT * FROM courses WHERE id=%s", (COURSE_ID,))
     course = cur.fetchone()
 
+    cur.execute("SELECT * FROM lectures WHERE course_id=%s ORDER BY id DESC", (COURSE_ID,))
+    lectures = cur.fetchall()
+
     cur.close()
     conn.close()
 
     if not course:
         return "Course not found", 500
 
-    return render_template("course_page.html", course=course)
+    return render_template(
+        "course_page.html",
+        course=course,
+        lectures=lectures,
+    )
 
 
 @app.route("/student/register", methods=["GET", "POST"])
