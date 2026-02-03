@@ -153,7 +153,7 @@ def login():
 
 
 @app.route("/logout")
-def logout():
+def instructor_logout():
     session.pop("instructor", None)
     return redirect("/")
 
@@ -201,6 +201,73 @@ def add_course():
         return redirect("/instructor/dashboard")
 
     return render_template("add_course.html")
+
+
+@app.route("/add_lecture/<int:course_id>", methods=["GET", "POST"])
+def add_lecture(course_id):
+    if not session.get("instructor"):
+        return redirect("/login")
+
+    if request.method == "POST":
+        title = request.form["title"]
+        file = request.files["file"]
+
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(LECTURE_FOLDER, filename))
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            INSERT INTO lectures (title, filename, course_id)
+            VALUES (%s, %s, %s)
+            """,
+            (title, filename, course_id)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return redirect(f"/course/{course_id}")
+
+    return render_template("add_lecture.html")
+
+
+@app.route("/add_assignment/<int:course_id>", methods=["GET", "POST"])
+def add_assignment(course_id):
+    if not session.get("instructor"):
+        return redirect("/login")
+
+    if request.method == "POST":
+        title = request.form["title"]
+        due_date = request.form["due_date"]
+        file = request.files["file"]
+
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(ASSIGNMENT_FOLDER, filename))
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            INSERT INTO assignments (title, filename, due_date, course_id)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (title, filename, due_date, course_id)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return redirect(f"/course/{course_id}")
+
+    return render_template("add_assignment.html")
+
+
 
 
 @app.route("/delete/<int:course_id>", methods=["POST"])
