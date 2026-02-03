@@ -1,48 +1,39 @@
 {% extends "base.html" %}
-
 {% block content %}
-<h2>{{ course[1] }}</h2>
-<p><b>Instructor:</b> {{ course[2] }}</p>
-<p>{{ course[3] }}</p>
+
+<h2>{{ course.title }}</h2>
+<p><b>Instructor:</b> {{ course.instructor }}</p>
+<p>{{ course.description }}</p>
+
+{% if course.submission_url %}
+  <p>
+    <b>📤 Assignment Submission:</b>
+    <a href="{{ course.submission_url }}" target="_blank">Submit Here</a>
+  </p>
+{% endif %}
 
 <hr>
 
 <h3>📘 Lectures</h3>
-{% if lectures %}
-  {% for lec in lectures %}
-    <p>
-      {{ lec[1] }}
-      <a href="/download/lecture/{{ lec[2] }}">Download</a>
-    </p>
-  {% endfor %}
+{% for lec in lectures %}
+  <p>
+    {{ lec.title }}
+    <a href="/download/lecture/{{ lec.filename }}">Download</a>
+  </p>
 {% else %}
-  <p>No lectures uploaded yet.</p>
-{% endif %}
+  <p>No lectures yet.</p>
+{% endfor %}
 
 <hr>
 
-
 <h3>📝 Assignments</h3>
-{% if assignments %}
-  {% for a in assignments %}
-    <p>
-      {{ a[1] }} (Due: {{ a[3] }})
-      <a href="/download/assignment/{{ a[2] }}">Download</a>
-    </p>
-  {% endfor %}
+{% for a in assignments %}
+  <p>
+    {{ a.title }} (Due: {{ a.due_date }})<br>
+    <a href="/download/assignment/{{ a.filename }}">Download Assignment</a>
+  </p>
 {% else %}
   <p>No assignments yet.</p>
-{% endif %}
-
-
-
-
-{% if course[4] %}
-  <p>
-    <b>📤 Assignment Submission:</b>
-    <a href="{{ course[4] }}" target="_blank">Submit your work here</a>
-  </p>
-  <hr>
-{% endif %}
+{% endfor %}
 
 {% endblock %}

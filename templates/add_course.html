@@ -1,22 +1,22 @@
 {% extends "base.html" %}
-
 {% block content %}
+
 <h2>Add Course</h2>
 
 <form method="POST">
-    Title:<br>
-    <input type="text" name="title" required><br><br>
+  Title:<br>
+  <input name="title" required><br><br>
 
-    Instructor:<br>
-    <input type="text" name="instructor" required><br><br>
+  Instructor:<br>
+  <input name="instructor" required><br><br>
 
-    Description:<br>
-    <textarea name="description"></textarea><br><br>
+  Description:<br>
+  <textarea name="description"></textarea><br><br>
 
-    Submission Link (Google Form):<br>
-    <input type="url" name="submission_url" required><br><br>
+  Assignment Submission Link:<br>
+  <input type="url" name="submission_url" required><br><br>
 
-    <button type="submit">Add Course</button>
+  <button type="submit">Add Course</button>
 </form>
 
 {% endblock %}

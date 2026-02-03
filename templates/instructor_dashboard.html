@@ -3,23 +3,21 @@
 
 <h2>👨‍🏫 Your Courses</h2>
 
-{% if courses %}
-  {% for c in courses %}
-    <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
-      <h3>{{ c[1] }}</h3>
-      <p><b>Instructor:</b> {{ c[2] }}</p>
+{% for c in courses %}
+  <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <h3>{{ c.title }}</h3>
+    <p><b>Instructor:</b> {{ c.instructor }}</p>
 
-      <a href="/course/{{ c[0] }}">View Course</a> |
-      <a href="/add_lecture/{{ c[0] }}">Add Lecture</a> |
-      <a href="/add_assignment/{{ c[0] }}">Add Assignment</a>
+    <a href="/course/{{ c.id }}">View</a> |
+    <a href="/add_lecture/{{ c.id }}">Add Lecture</a> |
+    <a href="/add_assignment/{{ c.id }}">Add Assignment</a>
 
-      <form action="/delete/{{ c[0] }}" method="POST" style="display:inline;">
-        <button type="submit">Delete Course</button>
-      </form>
-    </div>
-  {% endfor %}
+    <form action="/delete/{{ c.id }}" method="POST" style="display:inline;">
+      <button type="submit">Delete</button>
+    </form>
+  </div>
 {% else %}
-  <p>You haven’t created any courses yet.</p>
-{% endif %}
+  <p>No courses created yet.</p>
+{% endfor %}
 
 {% endblock %}

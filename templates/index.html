@@ -1,28 +1,18 @@
-{% extends "base.html" %}
+% extends "base.html" %}
 {% block content %}
 
 <h2>Available Courses</h2>
 
 {% for course in courses %}
-<div>
-    <h3>{{ course[1] }} (ID: {{ course[0] }})
-         <a href="/enroll/{{ course[0] }}" style="font-size:14px; margin-left:10px;">Enroll</a>
-    </h3>
-    <p><b>Instructor:</b> {{ course[2] }}</p>
-    <p>{{ course[3] }}</p>
+  <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+    <h3>{{ course.title }}</h3>
+    <p><b>Instructor:</b> {{ course.instructor }}</p>
+    <p>{{ course.description }}</p>
 
-
-
-   {% if session.get("instructor") %}
-<form action="/delete/{{ course[0] }}" method="POST" style="display:inline;">
-    <button type="submit">Delete</button>
-</form>
-{% endif %}
-
-    <hr>
-</div>
+    <a href="/course/{{ course.id }}">View Course</a>
+  </div>
 {% else %}
-<p>No courses yet.</p>
+  <p>No courses available.</p>
 {% endfor %}
 
 {% endblock %}

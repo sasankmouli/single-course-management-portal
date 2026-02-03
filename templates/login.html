@@ -1,19 +1,16 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Instructor Login</title>
-</head>
-<body>
-    <h2>Instructor Login</h2>
+{% extends "base.html" %}
+{% block content %}
 
-    <form method="POST">
-        Username:<br>
-        <input type="text" name="username"><br><br>
+<h2>Instructor Login</h2>
 
-        Password:<br>
-        <input type="password" name="password"><br><br>
+<form method="POST">
+  Username:<br>
+  <input name="username" required><br><br>
 
-        <button type="submit">Login</button>
-    </form>
-</body>
-</html>
+  Password:<br>
+  <input type="password" name="password" required><br><br>
+
+  <button type="submit">Login</button>
+</form>
+
+{% endblock %}
