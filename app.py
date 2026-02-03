@@ -455,3 +455,17 @@ def enroll(course_id):
     )
 
     return redirect(f"/course/{course_id}")
+
+@app.route("/admin/clear_students", methods=["POST"])
+def clear_students():
+    if not session.get("instructor"):
+        return "Unauthorized", 403
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("TRUNCATE enrollments, students RESTART IDENTITY CASCADE;")
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return "All student data cleared"
