@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 
+{% if session.get("instructor") %}
+  <hr>
+  <h3>Instructor Tools</h3>
+  <ul>
+    <li><a href="/add_lecture">Add Lecture</a></li>
+    <li><a href="/add_assignment">Add Assignment</a></li>
+  </ul>
+{% endif %}
+
+
 
 <p><b>Instructor:</b> {{ course.instructor }}</p>
 <p>{{ course.description }}</p>

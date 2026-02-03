@@ -57,6 +57,15 @@ def init_db():
         );
     """)
 
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS lectures (
+        id SERIAL PRIMARY KEY,
+        title TEXT,
+        filename TEXT,
+        course_id INTEGER
+    );
+    """)
+
     # Ensure fixed course exists / updates
     cur.execute(
         """
@@ -173,6 +182,49 @@ def instructor_login():
         return "Invalid credentials", 401
 
     return render_template("login.html")
+
+
+
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = "uploads"
+LECTURE_FOLDER = os.path.join(UPLOAD_FOLDER, "lectures")
+os.makedirs(LECTURE_FOLDER, exist_ok=True)
+
+@app.route("/add_lecture", methods=["GET", "POST"])
+def add_lecture():
+    if not session.get("instructor"):
+        return redirect("/login")
+
+    if request.method == "POST":
+        title = request.form["title"]
+        file = request.files["file"]
+
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(LECTURE_FOLDER, filename))
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO lectures (title, filename, course_id) VALUES (%s,%s,%s)",
+            (title, filename, COURSE_ID)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return redirect("/course")
+
+    return render_template("add_lecture.html")
+
+
+from flask import send_from_directory
+
+@app.route("/download/lecture/<filename>")
+def download_lecture(filename):
+    return send_from_directory(LECTURE_FOLDER, filename)
+
+
 
 
 @app.route("/logout")
