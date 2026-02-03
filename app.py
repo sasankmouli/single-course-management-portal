@@ -23,10 +23,10 @@ FROM_EMAIL = os.getenv("FROM_EMAIL", "onboarding@resend.dev")
 
 # Fixed course metadata
 COURSE_ID = 1
-COURSE_TITLE = "CS101 – Introduction to Programming"
-COURSE_INSTRUCTOR = "Instructor"
-COURSE_DESCRIPTION = "Core programming concepts using Python."
-COURSE_SUBMISSION_URL = "https://forms.google.com/your-form"
+COURSE_TITLE = "CS202 – Automata theory and logic - Spring 2026"
+COURSE_INSTRUCTOR = "Sasank Mouli"
+COURSE_DESCRIPTION = "Textbook: Theory of Computation by Michael Sipser"
+COURSE_SUBMISSION_URL = "https://docs.google.com/forms/d/1RmmB-k_0BSgqB-yDQmKAQ4MThkwEJeEVdc7V9tvAnWI/edit?usp=drivesdk"
 
 UPLOAD_FOLDER = "uploads"
 LECTURE_FOLDER = os.path.join(UPLOAD_FOLDER, "lectures")
