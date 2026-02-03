@@ -128,8 +128,7 @@ def init_db():
     conn.close()
 
 
-with app.app_context():
-    init_db()
+
 
 # ---------------- EMAIL ----------------
 
