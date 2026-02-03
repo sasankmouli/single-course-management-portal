@@ -39,7 +39,7 @@ os.makedirs(ASSIGNMENT_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
-app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024  # 2MB
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 2MB
 
 # ---------------- DB ----------------
 
