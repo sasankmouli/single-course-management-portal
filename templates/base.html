@@ -13,13 +13,12 @@
 {% if session.get("instructor") %}
   <a href="/add_lecture">Add Lecture</a> |
   <a href="/add_assignment">Add Assignment</a> |
-  <a href="/logout">Logout</a>
-
+  <a href="/logout">Instructor Logout</a>
 {% else %}
-  <a href="/student/login">Student Login</a> |
-  <a href="/student/register">Student Register</a> |
+  <a href="/student/register">Register for Updates</a> |
   <a href="/login">Instructor Login</a>
 {% endif %}
+
 
 <hr>
 

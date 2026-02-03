@@ -70,8 +70,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS students (
         id SERIAL PRIMARY KEY,
         name TEXT,
-        email TEXT UNIQUE,
-        password TEXT
+        email TEXT UNIQUE
     );
     """)
 
@@ -206,34 +205,6 @@ def course_page():
     )
 
 
-@app.route("/enroll", methods=["POST"])
-def enroll():
-    if not session.get("student_id"):
-        return redirect("/student/login")
-
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("SELECT name, email FROM students WHERE id=%s", (session["student_id"],))
-    student = cur.fetchone()
-
-    cur.execute("SELECT 1 FROM enrollments WHERE email=%s", (student["email"],))
-    if not cur.fetchone():
-        cur.execute(
-            "INSERT INTO enrollments (student_name, email, course_id) VALUES (%s,%s,%s)",
-            (student["name"], student["email"], COURSE_ID),
-        )
-        conn.commit()
-
-        send_email(
-            student["email"],
-            "Enrollment Confirmed",
-            f"You are enrolled in {COURSE_TITLE}.",
-        )
-
-    cur.close()
-    conn.close()
-    return redirect("/course")
 
 # ---------------- INSTRUCTOR UPLOADS ----------------
 
@@ -296,62 +267,34 @@ def add_assignment():
 @app.route("/student/register", methods=["GET", "POST"])
 def student_register():
     if request.method == "POST":
+        name = request.form["name"]
+        email = request.form["email"]
+
         conn = get_db()
         cur = conn.cursor()
-        try:
+
+        cur.execute("SELECT 1 FROM students WHERE email=%s", (email,))
+        if not cur.fetchone():
             cur.execute(
-                "INSERT INTO students (name, email, password) VALUES (%s,%s,%s)",
-                (
-                    request.form["name"],
-                    request.form["email"],
-                    generate_password_hash(request.form["password"]),
-                ),
+                "INSERT INTO students (name, email) VALUES (%s,%s)",
+                (name, email)
             )
             conn.commit()
-        except Exception:
-            conn.rollback()
-            cur.close()
-            conn.close()
-            return "Email already registered"
 
-        cur.execute("SELECT id, name FROM students WHERE email=%s", (request.form["email"],))
-        student = cur.fetchone()
-        session["student_id"] = student["id"]
-        session["student_name"] = student["name"]
+            send_email(
+                email,
+                "You’re registered!",
+                f"You’ll now receive updates for {COURSE_TITLE}."
+            )
 
         cur.close()
         conn.close()
+
         return redirect("/course")
 
     return render_template("student_register.html")
 
 
-@app.route("/student/login", methods=["GET", "POST"])
-def student_login():
-    if request.method == "POST":
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM students WHERE email=%s", (request.form["email"],))
-        student = cur.fetchone()
-
-        if student and check_password_hash(student["password"], request.form["password"]):
-            session["student_id"] = student["id"]
-            session["student_name"] = student["name"]
-            cur.close()
-            conn.close()
-            return redirect("/course")
-
-        cur.close()
-        conn.close()
-        return "Invalid login"
-
-    return render_template("student_login.html")
-
-
-@app.route("/student/logout")
-def student_logout():
-    session.clear()
-    return redirect("/")
 
 # ---------------- DOWNLOADS ----------------
 
@@ -372,3 +315,30 @@ def inject_course():
             "instructor": COURSE_INSTRUCTOR,
         }
     }
+
+@app.route("/enroll", methods=["POST"])
+def enroll():
+    email = request.form["email"]
+    name = request.form["name"]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT 1 FROM enrollments WHERE email=%s", (email,))
+    if not cur.fetchone():
+        cur.execute(
+            "INSERT INTO enrollments (student_name, email, course_id) VALUES (%s,%s,%s)",
+            (name, email, COURSE_ID)
+        )
+        conn.commit()
+
+        send_email(
+            email,
+            "Enrollment confirmed",
+            f"You’re enrolled in {COURSE_TITLE}."
+        )
+
+    cur.close()
+    conn.close()
+    return redirect("/course")
+
