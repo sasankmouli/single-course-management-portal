@@ -170,10 +170,11 @@ def add_course():
         cur.execute(
             """
             INSERT INTO courses (title, instructor, description, submission_url)
-            VALUES (?,?,?,?)
+            VALUES (%s, %s, %s, %s)
             """,
             (title, instructor, description, submission_url)
         )
+
         conn.commit()
         cur.close()
         conn.close()
