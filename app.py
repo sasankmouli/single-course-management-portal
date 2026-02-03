@@ -16,12 +16,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 FROM_EMAIL = "noreply@sasankmouli.com"  # default works
 
-
 app = Flask(__name__)
 
 app.secret_key = "DheerajSanghiMoodleDoodle2"
-
-
 
 UPLOAD_FOLDER = "uploads"
 LECTURE_FOLDER = os.path.join(UPLOAD_FOLDER, "lectures")
@@ -32,7 +29,6 @@ os.makedirs(ASSIGNMENT_FOLDER, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-
 DB = "courses.db"
 
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
@@ -40,6 +36,7 @@ ADMIN_PASS = os.getenv("ADMIN_PASS")
 
 INSTRUCTOR_USERNAME = os.getenv("INSTRUCTOR_USERNAME")
 INSTRUCTOR_PASSWORD_HASH = os.getenv("INSTRUCTOR_PASSWORD_HASH")
+
 
 def get_db():
     return psycopg2.connect(
@@ -49,14 +46,14 @@ def get_db():
     )
 
 
-
 def get_enrolled_emails(course_id):
     conn = get_db()
     cur = conn.cursor()
-    rows = cur.execute(
+    cur.execute(
         "SELECT DISTINCT email FROM enrollments WHERE course_id=?",
         (course_id,)
-    ).fetchall()
+    )
+    rows = cur.fetchall()
     conn.close()
 
     return [r[0] for r in rows]
@@ -147,7 +144,6 @@ def init_db():
     conn.close()
 
 
-
 @app.route("/")
 def index():
     conn = get_db()
@@ -187,7 +183,6 @@ def add_course():
     return render_template("add_course.html")
 
 
-
 # ---------- ENROLL ----------
 @app.route("/enroll/<int:course_id>", methods=["GET", "POST"])
 def enroll(course_id):
@@ -199,10 +194,12 @@ def enroll(course_id):
     cur = conn.cursor()
 
     # Get student email
-    student = cur.execute(
+    cur.execute(
         "SELECT email, name FROM students WHERE id=?",
         (session["student_id"],)
-    ).fetchone()
+    )
+
+    student = cur.fetchone()
 
     if not student:
         conn.close()
@@ -211,10 +208,12 @@ def enroll(course_id):
     email, name = student
 
     # Prevent duplicate enrollment
-    already = cur.execute("""
+    cur.execute("""
         SELECT 1 FROM enrollments
         WHERE email=? AND course_id=?
-    """, (email, course_id)).fetchone()
+    """, (email, course_id))
+
+    already = cur.fetchone()
 
     if already:
         conn.close()
@@ -227,10 +226,12 @@ def enroll(course_id):
     )
 
     # Get course name for email
-    course = cur.execute(
+    cur.execute(
         "SELECT title FROM courses WHERE id=?",
         (course_id,)
-    ).fetchone()
+    )
+
+    course = cur.fetchone()
 
     conn.commit()
     conn.close()
@@ -302,7 +303,6 @@ def add_assignment(course_id):
     return render_template("add_assignment.html", course_id=course_id)
 
 
-
 # ---------- ADD LECTURES ----------
 @app.route("/add_lecture/<int:course_id>", methods=["GET", "POST"])
 def add_lecture(course_id):
@@ -343,6 +343,7 @@ def add_lecture(course_id):
 def download_lecture(filename):
     return send_from_directory(LECTURE_FOLDER, filename)
 
+
 @app.route("/download/assignment/<filename>")
 def download_assignment(filename):
     return send_from_directory(ASSIGNMENT_FOLDER, filename)
@@ -375,10 +376,11 @@ def course_page(course_id):
     cur = conn.cursor()
 
     # Fetch course
-    course = cur.execute(
+    cur.execute(
         "SELECT * FROM courses WHERE id=?",
         (course_id,)
-    ).fetchone()
+    )
+    course = cur.fetchone()
 
     if not course:
         conn.close()
@@ -390,13 +392,15 @@ def course_page(course_id):
 
     # ✅ Student access check
     elif session.get("student_id"):
-        enrolled = cur.execute("""
+        cur.execute("""
             SELECT 1 FROM enrollments
             WHERE course_id=?
               AND email = (
                   SELECT email FROM students WHERE id=?
               )
-        """, (course_id, session["student_id"])).fetchone()
+        """, (course_id, session["student_id"]))
+
+        enrolled = cur.fetchone()
 
         allowed = enrolled is not None
 
@@ -410,15 +414,21 @@ def course_page(course_id):
 
 
     # Fetch resources
-    lectures = cur.execute(
+
+
+    cur.execute(
         "SELECT * FROM lectures WHERE course_id=?",
         (course_id,)
-    ).fetchall()
+    )
 
-    assignments = cur.execute(
+    lectures = cur.fetchall()
+
+    cur.execute(
         "SELECT * FROM assignments WHERE course_id=?",
         (course_id,)
-    ).fetchall()
+    )
+
+    assignments = cur.fetchall()
 
     conn.close()
 
@@ -428,6 +438,7 @@ def course_page(course_id):
         lectures=lectures,
         assignments=assignments
     )
+
 
 @app.route("/student/register", methods=["GET", "POST"])
 def student_register():
@@ -449,10 +460,12 @@ def student_register():
             return "Email already registered"
 
         # Log student in immediately
-        student_id = cur.execute(
+        cur.execute(
             "SELECT id FROM students WHERE email=?",
             (email,)
-        ).fetchone()[0]
+        )
+
+        student_id = cur.fetchone()[0]
 
         conn.close()
 
@@ -463,6 +476,7 @@ def student_register():
 
     return render_template("student_register.html")
 
+
 @app.route("/student/login", methods=["GET", "POST"])
 def student_login():
     if request.method == "POST":
@@ -471,10 +485,13 @@ def student_login():
 
         conn = get_db()
         cur = conn.cursor()
-        student = cur.execute(
+        cur.execute(
             "SELECT id, name, password FROM students WHERE email=?",
             (email,)
-        ).fetchone()
+        )
+
+        student = cur.fetchone()
+
         conn.close()
 
         if student and check_password_hash(student[2], password):
@@ -486,6 +503,7 @@ def student_login():
 
     return render_template("student_login.html")
 
+
 @app.route("/student/dashboard")
 def student_dashboard():
     if not session.get("student_id"):
@@ -494,14 +512,16 @@ def student_dashboard():
     conn = get_db()
     cur = conn.cursor()
 
-    courses = cur.execute("""
+    cur.execute("""
         SELECT courses.id, courses.title, courses.instructor
         FROM courses
         JOIN enrollments ON courses.id = enrollments.course_id
         WHERE enrollments.email = (
             SELECT email FROM students WHERE id=?
         )
-    """, (session["student_id"],)).fetchall()
+    """, (session["student_id"],))
+
+    courses = cur.fetchall()
 
     conn.close()
 
@@ -518,7 +538,6 @@ def student_logout():
     return redirect("/")
 
 
-
 @app.route("/instructor/dashboard")
 def instructor_dashboard():
     if not session.get("instructor"):
@@ -526,14 +545,14 @@ def instructor_dashboard():
 
     conn = get_db()
     cur = conn.cursor()
-    courses = cur.execute("SELECT * FROM courses").fetchall()
+    cur.execute("SELECT * FROM courses")
+    courses = cur.fetchall()
     conn.close()
 
     return render_template(
         "instructor_dashboard.html",
         courses=courses
     )
-
 
 
 def instructor_required():
@@ -544,7 +563,5 @@ if __name__ == "__main__":
     init_db()
     app.run()
 
-
 with app.app_context():
     init_db()
-
