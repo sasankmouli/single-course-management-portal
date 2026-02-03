@@ -105,20 +105,24 @@ def init_db():
 
     # Ensure fixed course exists
     cur.execute("SELECT id FROM courses WHERE id=%s", (COURSE_ID,))
-    if not cur.fetchone():
-        cur.execute(
-            """
-            INSERT INTO courses (id, title, instructor, description, submission_url)
-            VALUES (%s,%s,%s,%s,%s)
-            """,
-            (
-                COURSE_ID,
-                COURSE_TITLE,
-                COURSE_INSTRUCTOR,
-                COURSE_DESCRIPTION,
-                COURSE_SUBMISSION_URL,
-            ),
+    cur.execute(
+        """
+        INSERT INTO courses (id, title, instructor, description, submission_url)
+        VALUES (%s,%s,%s,%s,%s)
+        ON CONFLICT (id) DO UPDATE SET
+            title = EXCLUDED.title,
+            instructor = EXCLUDED.instructor,
+            description = EXCLUDED.description,
+            submission_url = EXCLUDED.submission_url
+        """,
+        (
+            COURSE_ID,
+            COURSE_TITLE,
+            COURSE_INSTRUCTOR,
+            COURSE_DESCRIPTION,
+            COURSE_SUBMISSION_URL,
         )
+    )
 
     conn.commit()
     cur.close()
@@ -359,3 +363,12 @@ def download_lecture(filename):
 @app.route("/download/assignment/<filename>")
 def download_assignment(filename):
     return send_from_directory(ASSIGNMENT_FOLDER, filename)
+
+@app.context_processor
+def inject_course():
+    return {
+        "course": {
+            "title": COURSE_TITLE,
+            "instructor": COURSE_INSTRUCTOR,
+        }
+    }

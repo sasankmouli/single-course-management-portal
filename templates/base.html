@@ -5,25 +5,23 @@
 </head>
 <body>
 
-<h1>📚 Course Management Portal</h1>
+<h1>{{ course.title if course else "" }}</h1>
 
-<a href="/">Home</a>
+
+
 
 {% if session.get("instructor") %}
-  | <a href="/course">Course Page</a>
-  | <a href="/add_lecture">Add Lecture</a>
-  | <a href="/add_assignment">Add Assignment</a>
-  | <a href="/logout">Logout</a>
+  <a href="/add_lecture">Add Lecture</a> |
+  <a href="/add_assignment">Add Assignment</a> |
+  <a href="/logout">Logout</a>
+{% endif %}
 
 
-{% elif session.get("student_id") %}
-  | <a href="/student/dashboard">My Dashboard</a>
-  | <a href="/student/logout">Student Logout</a>
 
 {% else %}
-  | <a href="/student/login">Student Login</a>
-  | <a href="/student/register">Student Register</a>
-  | <a href="/login">Instructor Login</a>
+  <a href="/student/login">Student Login</a> |
+  <a href="/student/register">Student Register</a> |
+  <a href="/login">Instructor Login</a>
 {% endif %}
 
 <hr>
