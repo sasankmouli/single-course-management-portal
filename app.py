@@ -22,6 +22,10 @@ COURSE_TITLE = "Your Course Name"
 COURSE_INSTRUCTOR = "Instructor"
 COURSE_DESCRIPTION = "Course description"
 
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+FROM_EMAIL = os.getenv("FROM_EMAIL")  # e.g. course@yourdomain.edu
+
+
 # ---------------- APP ----------------
 
 app = Flask(__name__)
@@ -74,6 +78,16 @@ def init_db():
         id SERIAL PRIMARY KEY,
         title TEXT,
         filename TEXT,
+        course_id INTEGER
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS assignments (
+        id SERIAL PRIMARY KEY,
+        title TEXT,
+        filename TEXT,
+        due_date TEXT,
         course_id INTEGER
     );
     """)
@@ -157,6 +171,11 @@ def student_register():
                 "INSERT INTO students (name, email) VALUES (%s,%s)",
                 (name, email)
             )
+            send_email(
+                email,
+                "Registration confirmed",
+                f"You’ll now receive updates for {COURSE_TITLE}."
+            )
             conn.commit()
 
         cur.close()
@@ -236,6 +255,12 @@ def add_lecture():
             (title, filename, COURSE_ID)
         )
         conn.commit()
+        for email in get_student_emails():
+            send_email(
+                email,
+                "New lecture uploaded",
+                f"A new lecture has been added to {COURSE_TITLE}.\n\nPlease visit the course page to download it."
+            )
         cur.close()
         conn.close()
 
@@ -244,11 +269,56 @@ def add_lecture():
     return render_template("add_lecture.html")
 
 
+@app.route("/add_assignment", methods=["GET", "POST"])
+def add_assignment():
+    if not session.get("instructor"):
+        return redirect("/login")
+
+    if request.method == "POST":
+        title = request.form["title"]
+        due_date = request.form["due_date"]
+        file = request.files["file"]
+
+        if not file or file.filename == "":
+            return "No file selected", 400
+
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(ASSIGNMENT_FOLDER, filename))
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO assignments (title, filename, due_date, course_id) VALUES (%s,%s,%s,%s)",
+            (title, filename, due_date, COURSE_ID)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        # 🔔 Email notification (final step)
+        for email in get_student_emails():
+            send_email(
+                email,
+                "New assignment posted",
+                f"A new assignment has been posted for {COURSE_TITLE}.\n\nPlease check the course page."
+            )
+
+        return redirect("/course")
+
+    return render_template("add_assignment.html")
 
 
 @app.route("/download/lecture/<filename>")
 def download_lecture(filename):
     return send_from_directory(LECTURE_FOLDER, filename, as_attachment=True)
+
+@app.route("/download/assignment/<filename>")
+def download_assignment(filename):
+    return send_from_directory(
+        ASSIGNMENT_FOLDER,
+        filename,
+        as_attachment=True
+    )
 
 
 
@@ -270,4 +340,45 @@ def clear_lectures():
     cur.close()
     conn.close()
     return "Lectures cleared"
+
+def send_email(to_email, subject, body):
+    if not RESEND_API_KEY or not FROM_EMAIL:
+        print("Email disabled (missing config)")
+        return
+
+    try:
+        r = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": FROM_EMAIL,
+                "to": to_email,
+                "subject": subject,
+                "text": body,
+            },
+            timeout=5,
+        )
+
+        if r.status_code >= 400:
+            print("Email error:", r.text)
+
+    except Exception as e:
+        # CRITICAL: never crash the request
+        print("Email exception:", e)
+
+
+def get_student_emails():
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT email FROM students")
+    emails = [row["email"] for row in cur.fetchall()]
+
+    cur.close()
+    conn.close()
+    return emails
+
 

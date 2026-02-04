@@ -1,19 +1,18 @@
-{% extends "base.html" %}
-{% block content %}
-
-<h2>Add Assignment</h2>
-
 <form method="POST" enctype="multipart/form-data">
-  Title:<br>
-  <input name="title" required><br><br>
+  <p>
+    Assignment title:<br>
+    <input name="title" required>
+  </p>
 
-  Due Date:<br>
-  <input type="date" name="due_date" required><br><br>
+  <p>
+    Due date:<br>
+    <input type="date" name="due_date" required>
+  </p>
 
-  File:<br>
-  <input type="file" name="file" required><br><br>
+  <p>
+    File:<br>
+    <input type="file" name="file" required>
+  </p>
 
   <button type="submit">Upload Assignment</button>
 </form>
-
-{% endblock %}
