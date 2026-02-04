@@ -26,16 +26,13 @@
 
 <h3>📘 Lectures</h3>
 {% for lec in lectures %}
-  <li>
+  <p>
     {{ lec.title }}
-    {% if lec.filename %}
-      — <a href="/download/lecture/{{ lec.filename }}">Download</a>
-    {% else %}
-      (file missing)
-    {% endif %}
-  </li>
+    <a href="/download/lecture/{{ lec.filename }}">Download</a>
+  </p>
+{% else %}
+  <p>No lectures yet.</p>
 {% endfor %}
-
 
 <hr>
 
