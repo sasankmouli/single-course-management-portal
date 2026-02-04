@@ -28,7 +28,7 @@
 {% for lec in lectures %}
   <p>
     {% if lec.filename %}
-      — <a href="/download/lecture/{{ lec.filename }}">Download</a>
+      <a href="/download/lecture/{{ lec.filename }}">Download</a>
     {% else %}
       (file missing)
     {% endif %}
