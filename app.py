@@ -7,10 +7,6 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-UPLOAD_FOLDER = os.path.join(app.root_path, "uploads")
-LECTURE_FOLDER = os.path.join(UPLOAD_FOLDER, "lectures")
-
-os.makedirs(LECTURE_FOLDER, exist_ok=True)
 
 
 # ---------------- BASIC CONFIG ----------------
