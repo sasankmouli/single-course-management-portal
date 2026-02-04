@@ -6,6 +6,8 @@ from flask import Flask, render_template, request, redirect, session
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from flask import send_from_directory
+from werkzeug.utils import secure_filename
 
 
 
@@ -202,40 +204,13 @@ def instructor_login():
 
 
 
-from werkzeug.utils import secure_filename
 
 UPLOAD_FOLDER = "uploads"
 LECTURE_FOLDER = os.path.join(UPLOAD_FOLDER, "lectures")
 os.makedirs(LECTURE_FOLDER, exist_ok=True)
 
-@app.route("/add_lecture", methods=["GET", "POST"])
-def add_lecture():
-    if not session.get("instructor"):
-        return redirect("/login")
-
-    if request.method == "POST":
-        title = request.form["title"]
-        file = request.files["file"]
-
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(LECTURE_FOLDER, filename))
-
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO lectures (title, filename, course_id) VALUES (%s,%s,%s)",
-            (title, filename, COURSE_ID)
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return redirect("/course")
-
-    return render_template("add_lecture.html")
 
 
-from flask import send_from_directory
 
 
 @app.route("/add_lecture", methods=["GET", "POST"])
