@@ -1,12 +1,37 @@
-<h2>New Discussion</h2>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>New Discussion</title>
+</head>
+<body>
+
+<h2>Start a New Discussion</h2>
 
 <form method="POST">
-  <p>Name:<br><input name="name" required></p>
-  <p>Email:<br><input name="email" type="email" required></p>
-  <p>Title:<br><input name="title" required></p>
-  <p>Message:<br><textarea name="content" rows="6" required></textarea></p>
+  <p>
+    Name:<br>
+    <input name="name" required>
+  </p>
 
-  <button type="submit">Post</button>
+  <p>
+    Email:<br>
+    <input name="email" type="email" required>
+  </p>
+
+  <p>
+    Title:<br>
+    <input name="title" required>
+  </p>
+
+  <p>
+    Message:<br>
+    <textarea name="content" rows="6" required></textarea>
+  </p>
+
+  <button type="submit">Post Discussion</button>
 </form>
 
-<p><a href="/discussions">← Back</a></p>
+<p><a href="/discussions">← Back to discussions</a></p>
+
+</body>
+</html>
