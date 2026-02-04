@@ -292,6 +292,14 @@ def add_assignment():
             (title, filename, due_date, COURSE_ID)
         )
         conn.commit()
+
+        for email in get_student_emails():
+            send_email(
+                email,
+                "New assignment posted",
+                f"A new assignment has been posted for {COURSE_TITLE}.\n\nPlease check the course page for details."
+            )
+
         cur.close()
         conn.close()
 
