@@ -257,3 +257,17 @@ def download_lecture(filename):
 def instructor_logout():
     session.pop("instructor", None)
     return redirect("/course")
+
+@app.route("/admin/clear_lectures", methods=["POST"])
+def clear_lectures():
+    if not session.get("instructor"):
+        return "Unauthorized", 403
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM lectures")
+    conn.commit()
+    cur.close()
+    conn.close()
+    return "Lectures cleared"
+
