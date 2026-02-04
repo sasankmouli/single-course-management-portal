@@ -237,6 +237,40 @@ def add_lecture():
 
 from flask import send_from_directory
 
+
+@app.route("/add_lecture", methods=["GET", "POST"])
+def add_lecture():
+    if not session.get("instructor"):
+        return redirect("/login")
+
+    if request.method == "POST":
+        title = request.form["title"]
+        file = request.files["file"]
+
+        if not file or file.filename == "":
+            return "No file selected", 400
+
+        filename = secure_filename(file.filename)
+        save_path = os.path.join(LECTURE_FOLDER, filename)
+        file.save(save_path)
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO lectures (title, filename, course_id) VALUES (%s,%s,%s)",
+            (title, filename, COURSE_ID)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return redirect("/course")
+
+    return render_template("add_lecture.html")
+
+
+
+
 @app.route("/download/lecture/<filename>")
 def download_lecture(filename):
     return send_from_directory(LECTURE_FOLDER, filename, as_attachment=True)
