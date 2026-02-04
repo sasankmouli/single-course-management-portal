@@ -1,0 +1,31 @@
+<h2>{{ thread.title }}</h2>
+<p>
+  <b>{{ thread.author_name }}</b> · {{ thread.created_at }}
+</p>
+<p>{{ thread.content }}</p>
+
+<hr>
+
+<h3>Replies</h3>
+
+{% for r in replies %}
+  <p>
+    <b>{{ r.author_name }}</b> · {{ r.created_at }}<br>
+    {{ r.content }}
+  </p>
+  <hr>
+{% else %}
+  <p>No replies yet.</p>
+{% endfor %}
+
+<h3>Add a reply</h3>
+
+<form method="POST" action="/discussions/{{ thread.id }}/reply">
+  <p>Name:<br><input name="name" required></p>
+  <p>Email:<br><input name="email" type="email" required></p>
+  <p>Reply:<br><textarea name="content" rows="4" required></textarea></p>
+
+  <button type="submit">Reply</button>
+</form>
+
+<p><a href="/discussions">← Back to discussions</a></p>

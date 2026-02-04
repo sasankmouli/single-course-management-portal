@@ -57,6 +57,28 @@ def init_db():
     cur = conn.cursor()
 
     cur.execute("""
+    CREATE TABLE IF NOT EXISTS discussions (
+        id SERIAL PRIMARY KEY,
+        author_name TEXT,
+        author_email TEXT,
+        title TEXT,
+        content TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS discussion_replies (
+        id SERIAL PRIMARY KEY,
+        discussion_id INTEGER REFERENCES discussions(id) ON DELETE CASCADE,
+        author_name TEXT,
+        author_email TEXT,
+        content TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS courses (
             id INTEGER PRIMARY KEY,
             title TEXT,
@@ -376,6 +398,104 @@ def send_email(to_email, subject, body):
     except Exception as e:
         # CRITICAL: never crash the request
         print("Email exception:", e)
+
+
+@app.route("/discussions")
+def discussions():
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT * FROM discussions
+        ORDER BY created_at DESC
+    """)
+    threads = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template("discussions.html", threads=threads)
+
+@app.route("/discussions/new", methods=["GET", "POST"])
+def new_discussion():
+    if request.method == "POST":
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            INSERT INTO discussions (author_name, author_email, title, content)
+            VALUES (%s,%s,%s,%s)
+            """,
+            (
+                request.form["name"],
+                request.form["email"],
+                request.form["title"],
+                request.form["content"],
+            ),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return redirect("/discussions")
+
+    return render_template("new_discussion.html")
+
+@app.route("/discussions/<int:discussion_id>")
+def view_discussion(discussion_id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM discussions WHERE id=%s", (discussion_id,))
+    thread = cur.fetchone()
+
+    cur.execute(
+        """
+        SELECT * FROM discussion_replies
+        WHERE discussion_id=%s
+        ORDER BY created_at
+        """,
+        (discussion_id,),
+    )
+    replies = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    if not thread:
+        return "Discussion not found", 404
+
+    return render_template(
+        "discussion_thread.html",
+        thread=thread,
+        replies=replies,
+    )
+@app.route("/discussions/<int:discussion_id>/reply", methods=["POST"])
+def reply_discussion(discussion_id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        INSERT INTO discussion_replies
+        (discussion_id, author_name, author_email, content)
+        VALUES (%s,%s,%s,%s)
+        """,
+        (
+            discussion_id,
+            request.form["name"],
+            request.form["email"],
+            request.form["content"],
+        ),
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect(f"/discussions/{discussion_id}")
+
 
 
 def get_student_emails():

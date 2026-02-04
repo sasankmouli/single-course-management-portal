@@ -1,0 +1,16 @@
+<h2>Discussion Board</h2>
+
+<p><a href="/discussions/new">Start a new discussion</a></p>
+
+<ul>
+{% for d in threads %}
+  <li>
+    <a href="/discussions/{{ d.id }}">{{ d.title }}</a><br>
+    <small>by {{ d.author_name }} · {{ d.created_at }}</small>
+  </li>
+{% else %}
+  <li>No discussions yet.</li>
+{% endfor %}
+</ul>
+
+<p><a href="/course">← Back to course</a></p>
