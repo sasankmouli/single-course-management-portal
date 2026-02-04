@@ -29,6 +29,14 @@ COURSE_DESCRIPTION = "Course description"
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET
 
+UPLOAD_FOLDER = os.path.join(app.root_path, "uploads")
+LECTURE_FOLDER = os.path.join(UPLOAD_FOLDER, "lectures")
+ASSIGNMENT_FOLDER = os.path.join(UPLOAD_FOLDER, "assignments")
+
+os.makedirs(LECTURE_FOLDER, exist_ok=True)
+os.makedirs(ASSIGNMENT_FOLDER, exist_ok=True)
+
+
 # ---------------- DATABASE ----------------
 
 def get_db():
