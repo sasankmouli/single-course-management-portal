@@ -27,8 +27,11 @@
 <h3>📘 Lectures</h3>
 {% for lec in lectures %}
   <p>
-    {{ lec.title }}
-    <a href="/download/lecture/{{ lec.filename }}">Download</a>
+    {% if lec.filename %}
+      — <a href="/download/lecture/{{ lec.filename }}">Download</a>
+    {% else %}
+      (file missing)
+    {% endif %}
   </p>
 {% else %}
   <p>No lectures yet.</p>
